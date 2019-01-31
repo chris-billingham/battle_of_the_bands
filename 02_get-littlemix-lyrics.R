@@ -20,5 +20,5 @@ littlemix_lyrics <- littlemix_albums %>%
   map2_dfr("little mix", ., genius_album_plus)
 
 # we'll need this for later
-littlemix_albums <- data_frame(album = littlemix_albums) %>%
+littlemix_albums_df <- tibble(album = littlemix_albums) %>%
   mutate(album_no = seq(1, length(littlemix_albums)))
