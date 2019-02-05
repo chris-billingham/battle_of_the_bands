@@ -5,17 +5,16 @@ library(signal)
 library(oce)
 library(fs)
 library(progress)
+library(pbapply)
 
 # load in the audio functions
-source("02_audio-functions.R")
+source("07_audio-functions.R")
 
 # load in the model
-model <- load_model_hdf5("models/blur_cnn_dropout_2.h5")
+model <- load_model_hdf5("models/bob_cnn_dropout.h5")
 
 # get the album in the right order
-albums <- dir_ls("mp3/", type = "directory") %>%
-  gsub("mp3/", "", .) %>%
-  as.character()
+bands <- c("little mix", "radiohead")
 
 # image prediction function
 image_predict <- function(file_path) {
@@ -32,17 +31,14 @@ image_predict <- function(file_path) {
   predict <- model %>% predict(img)
   
   # which album
-  album_predict <- data.frame(album = albums,
-                              likelihood = t(predict),
-                              stringsAsFactors = FALSE) %>%
-    mutate(winner = ifelse(likelihood == max(likelihood), 1, 0))
+  band_predict <- tibble(is_radiohead = predict)
   
   
-  return(album_predict)
+  return(band_predict)
 }
 
 # entire prediction loop
-predict_blur_album <- function(mp3_file_path) {
+predict_band <- function(mp3_file_path) {
   
   # take the mp3 file path and turn it into 1 second spectrograms in a temp directory
   chunk_and_temp(mp3_file_path)
@@ -51,33 +47,36 @@ predict_blur_album <- function(mp3_file_path) {
   image_files <- dir_ls(tempdir(), type = "file", glob = "*.png")
   
   # a note to tell us what's happening
-  print(paste("Predicting likelihood of album for each spectrogram"))
+  print(paste("Predicting likelihood of radiohead for each spectrogram"))
   
   
-  album_prediction <- pblapply(image_files, image_predict) %>% 
+  radiohead_prediction <- pblapply(image_files, image_predict) %>% 
     bind_rows() %>%
-    group_by(album) %>%
-    summarise(total_img_likelihood = sum(likelihood),
-              total_winner = sum(winner)) %>%
-    mutate(album_likelihood = total_img_likelihood/sum(total_img_likelihood),
-           album_winner = total_winner/sum(total_winner)) %>%
-    arrange(desc(album_likelihood))
+    mutate(winner = ifelse(is_radiohead > 0.5, 1, 0),
+           file = mp3_file_path,
+           pos = row_number())
+  
+  band_prediction <- tibble(file = mp3_file_path,
+                            pct_radiohead = sum(radiohead_prediction$winner)/nrow(radiohead_prediction))
+  
   
   print("Collating all spectrogram results into single track likelihood")
   file_delete(image_files)
   
-  return(album_prediction)
+  return(radiohead_prediction)
 }
 
-# get all the b-sides from the blur 21 boxset
-all_tracks <- dir_ls("~/Downloads/Blur 21", recursive = TRUE, type = "file", glob = "*.mp3")
-all_tracks_df <- data_frame(track_name = all_tracks) %>%
-  dplyr::filter(grepl("CD2", track_name))
+# get all the heldout mp3s
+all_tracks <- dir_ls("holdout", recursive = TRUE, type = "file", glob = "*.mp3")
+all_tracks_df <- data_frame(track_name = all_tracks)
 
-# randomly choose a track and it's path from the list of tracks
-random_track <- as.character(all_tracks_df[floor(runif(1, 1, nrow(all_tracks_df))),1])
+# let's predict the band, and see how long it takes
+predictions_all <- map_dfr(all_tracks_df$track_name, predict_band)
 
-# let's predict the album, and see how long it takes
-predict_blur_album(random_track)
+predictions_all %>% 
+  group_by(file) %>% 
+  summarise(n_prob = sum(is_radiohead), 
+            n_winner = sum(winner), n = n())
+
 
 
