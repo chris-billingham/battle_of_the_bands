@@ -6,7 +6,7 @@ library(rvest)
 # now, let's brighten things up a bit
 url <- "https://en.wikipedia.org/wiki/Little_Mix_discography#Studio_albums"
 
-# get the list of full studio albums for radiohead from wikipedia
+# get the list of full studio albums for littlemix from wikipedia
 littlemix_albums <- read_html(url) %>% 
   html_nodes("table.wikitable.plainrowheaders") %>%
   html_table(fill = TRUE) %>%
