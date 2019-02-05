@@ -1,7 +1,7 @@
 options(stringsAsFactors = FALSE)
 library(tidyverse)
 
-# first let's scrape wikipedia for the list of Radiohead Studio albums
+# first let's scrape wikipedia for the list of Little Mix Studio albums
 library(rvest)
 # now, let's brighten things up a bit
 url <- "https://en.wikipedia.org/wiki/Little_Mix_discography#Studio_albums"

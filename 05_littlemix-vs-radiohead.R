@@ -20,16 +20,24 @@ library(tidyr)
 frequency <- frequency %>% 
   select(band, word, freq) %>% 
   spread(band, freq) %>%
-  arrange(little_mix, radiohead)
+  arrange(little_mix, radiohead) %>%
+  left_join(get_sentiments("afinn")) %>%
+  mutate(score = factor(sign(ifelse(is.na(score), 0, score))))
 
 library(scales)
 
-ggplot(frequency, aes(little_mix, radiohead)) +
-  geom_jitter(alpha = 0.1, size = 2.5, width = 0.25, height = 0.25) +
-  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+frequency %>%
+  ggplot(aes(little_mix, radiohead, colour = score)) +
+  scale_colour_manual(values = c("firebrick1", "grey81", "springgreen4")) +
+  geom_jitter( alpha = 0.1, size = 2.5, width = 0.25, height = 0.25) +
+  geom_text(aes(label = word, fontface = "bold"), check_overlap = TRUE, vjust = 1.5) +
   scale_x_log10(labels = percent_format()) +
   scale_y_log10(labels = percent_format()) +
-  geom_abline(color = "red")
+  theme(legend.position = "none") +
+  geom_abline(color = "red") +
+  labs(title = "Comparing Word Frequencies between Little Mix and Radiohead",
+       x = "Frequency of Occurrence in Little Mix Songs",
+       y = "Frequency of Occurrence in Radiohead Songs")
 
 word_ratios <- both_bands %>%
   count(word, band) %>%
