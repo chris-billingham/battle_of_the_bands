@@ -68,15 +68,45 @@ predict_band <- function(mp3_file_path) {
 
 # get all the heldout mp3s
 all_tracks <- dir_ls("holdout", recursive = TRUE, type = "file", glob = "*.mp3")
-all_tracks_df <- data_frame(track_name = all_tracks)
+all_tracks_df <- tibble(track_name = all_tracks)
 
 # let's predict the band, and see how long it takes
 predictions_all <- map_dfr(all_tracks_df$track_name, predict_band)
 
-predictions_all %>% 
+summary <- predictions_all %>% 
   group_by(file) %>% 
   summarise(n_prob = sum(is_radiohead), 
             n_winner = sum(winner), n = n())
 
+
+radiomix <- predictions_all %>%
+  mutate(band = case_when(grepl("moon_shaped_pool", file)  ~ "radiohead",
+                          TRUE ~ "little mix"),
+         track_number = as.numeric(str_extract(gsub("lm5", "lmfive", file), "[0-9]+")),
+         track_name = gsub(".mp3", "", trimws(str_extract(file, "([A-Za-z'\\(\\) ]+).mp3"))))
+
+radiomix %>% 
+  dplyr::filter(band == "radiohead") %>%
+  ggplot(aes(pos, is_radiohead, colour = winner)) +
+  geom_line() +
+  theme(legend.position = "none") +
+  scale_colour_gradient(low = "deeppink2", high = "grey35") +
+  facet_wrap(~ fct_reorder(track_name, track_number), scales = "free_x") +
+  labs(title = "A Moon Shaped Pool - Radiohead",
+       subtitle = "Radiohead-Little Mix'edness",
+       x = "seconds of the track",
+       y = "Radiohead Ratio")
+
+radiomix %>% 
+  dplyr::filter(band == "little mix") %>%
+  ggplot(aes(pos, is_radiohead, colour = winner)) +
+  geom_line() +
+  theme(legend.position = "none") +
+  scale_colour_gradient(low = "deeppink2", high = "grey35") +
+  facet_wrap(~ fct_reorder(track_name, track_number), scales = "free_x") +
+  labs(title = "LM5 - Little Mix",
+       subtitle = "Radiohead-Little Mix'edness",
+       x = "seconds of the track",
+       y = "Radiohead Ratio")
 
 
