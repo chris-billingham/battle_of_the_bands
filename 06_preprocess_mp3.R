@@ -9,8 +9,8 @@ library(progress)
 # load in the audio functions
 source("07_audio-functions.R")
 
-# get a list of all blur mp3s from the mp3 directory
-# note format in the directory is mp3/{album_name}/{track_number} - {track_name}.mp3
+# get a list of all the  mp3s from the mp3 directory
+# note format in the directory is mp3/{band_name}/{track_number} - {track_name}.mp3
 # so most of this is tuned for that
 get_files <- fs::dir_ls("mp3/", recursive = TRUE, type = "file")
 

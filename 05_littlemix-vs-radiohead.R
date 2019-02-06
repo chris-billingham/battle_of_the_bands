@@ -1,12 +1,21 @@
 library(tidyverse)
+library(tidyr)
+library(scales)
 
+# we need the two uni_sent dfs we made in the first two codes
+# let's add the actual bands in
 littlemix_uni_sent$band <- "little_mix"
 radiohead_uni_sent$band <- "radiohead"
+
+# push it together, remove stop words
+# also in a lot of lyrics for Little Mix it calls out who's singing
+# so we have to remove the girl's names from the list
+# sorry ladies
 both_bands <- bind_rows(littlemix_uni_sent, radiohead_uni_sent) %>%
   anti_join(stop_words) %>%
   filter(!(word %in% c("jesy", "leigh", "anne", "jade", "perrie")))
 
-
+# let's look at the frequency on a per band basis
 frequency <- both_bands %>% 
   group_by(band) %>% 
   count(word, sort = TRUE) %>% 
@@ -15,8 +24,7 @@ frequency <- both_bands %>%
               summarise(total = n())) %>%
   mutate(freq = n/total)
 
-library(tidyr)
-
+# add in the sentiment
 frequency <- frequency %>% 
   select(band, word, freq) %>% 
   spread(band, freq) %>%
@@ -24,8 +32,9 @@ frequency <- frequency %>%
   left_join(get_sentiments("afinn")) %>%
   mutate(score = factor(sign(ifelse(is.na(score), 0, score))))
 
-library(scales)
-
+# right let's plot these % on a log log scale
+# we'll highlight those with a pos/neg sentiment in red/green and bold
+# whilst the 0'ers will be light grey
 frequency %>%
   ggplot(aes(little_mix, radiohead, colour = score)) +
   scale_colour_manual(values = c("firebrick1", "grey81", "springgreen4")) +
@@ -39,6 +48,9 @@ frequency %>%
        x = "Frequency of Occurrence in Little Mix Songs",
        y = "Frequency of Occurrence in Radiohead Songs")
 
+# Little Mix do love love
+# now a bunch of stuff for the log ratio's between the two bands
+# which words are inordinately more likely to appear in that band's lyric
 word_ratios <- both_bands %>%
   count(word, band) %>%
   group_by(word) %>%
@@ -63,3 +75,5 @@ word_ratios %>%
   ylab("log odds ratio (radiohead/little_mix)") +
   scale_fill_discrete(name = "", labels = c("radiohead", "little_mix"))
 
+# little mix have some really short yelps and stuff in there
+# tbf it's not very interesting and i won't probably use it

@@ -1,9 +1,8 @@
-# todo
-# either wordfrequencies 7.2 or word usage 7.3
 
-# let's look at rolling sentiment
 library(tidyverse)
 library(tidytext)
+# devtools::install_github("dgrtwo/drlib")
+library(drlib)
 
 # get the afinn sentiment for each one
 radiohead_uni_sent <- radiohead_lyrics %>% 
@@ -32,13 +31,14 @@ top_bottom <- bind_rows(top_n(most_sentimented, 10),
          sign = sign(sentiment_sum))
 
 # album top-bottom
-# get top and bottom 10
+# get top and bottom 5 per album
 top_bottom_album <- bind_rows(top_n(most_sentimented_album, 5),
                               top_n(most_sentimented_album, -5)) %>%
   left_join(radiohead_albums_df) %>%
   mutate(position = row_number(),
          sign = sign(sentiment_sum))
 
+# let's chart the overall lyric corpus
 top_bottom %>%
   ggplot(aes(fct_reorder(word, -position), sentiment_sum)) + 
   geom_col(aes(fill = factor(sign))) +
@@ -50,6 +50,7 @@ top_bottom %>%
        x = "Total sum of sentiment contribution",
        y = "Word")
 
+# and let's chart top/bottom 5 per album (note use of reorder_within from drlib)
 top_bottom_album %>%
   ggplot(aes(reorder_within(word, -position, album), sentiment_sum)) + 
   geom_col(aes(fill = factor(sign))) +
@@ -63,9 +64,7 @@ top_bottom_album %>%
        y = "Total sum of sentiment contribution",
        x = "Word")
 
-# THIS IS WHERE YOURE UP TO -----------------------------------------------
-
-# need to rebuild the rolling s
+# create a df which looks at some kind of rolling sentiment through an album
 radiohead_rolling_sent <- radiohead_lyrics %>% 
   unnest_tokens(word, lyric) %>% 
   left_join(get_sentiments("afinn")) %>%
@@ -103,6 +102,7 @@ all_songs <- radiohead_rolling_sent %>%
   summarise(total_sentiment = sum(score)) %>%
   arrange(desc(total_sentiment))
 
+# what we got at the tp and bottom
 head(all_songs)
 tail(all_songs)
 
@@ -136,6 +136,7 @@ radiohead_rolling_sent %>%
   arrange(total_sent)
 
 # interestingly both tracks are driven by repeated instances of the word "no"
+# checking the lyrics on azlyrics, punchup starts with "no x 43", hahahaha
 
 # let's have a look at hail to the thief visually
 radiohead_rolling_sent %>% 
