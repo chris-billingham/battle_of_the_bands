@@ -84,7 +84,8 @@ save_spectrogram <- function(wave_obj, filename) {
          col = oce.colorsVelocity,
          drawPalette = FALSE,
          decimate = FALSE,
-         axes = FALSE
+         axes = FALSE,
+         useRaster = TRUE
   )
   dump <- dev.off()
 }

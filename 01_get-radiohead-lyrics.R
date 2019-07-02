@@ -15,7 +15,7 @@ radiohead_albums <- read_html(url) %>%
   tolower()
 
 # now we're going to use the geniusR package and get all the lyrics in a list
-library(geniusR)
+library(genius)
 
 # annoyingly genius_album doesn't return the album name so i need to supplement this
 genius_album_plus <- function(artist, album) {
